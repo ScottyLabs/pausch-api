@@ -7,7 +7,6 @@ from flask import request
 from flask_cors import CORS, cross_origin
 import lumiversepython as L
 
-
 rig = L.Rig('/home/teacher/Lumiverse/PBridge.rig.json')
 rig.init()
 rig.run()
@@ -15,7 +14,7 @@ rig.run()
 app = Flask(__name__)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
-
+wait
 q = Queue.Queue()
 
 
@@ -24,19 +23,22 @@ def hello_world():
   if request.method == 'POST':
     content = request.get_json(force=True)
 
-    red = float(content['red'])
-    blue = float(content['blue'])
-    green = float(content['green'])	
-    
+    username = content['name']
+    frames = content['Frames']
+
+    #red = float(content['red'])
+    #blue = float(content['blue'])
+    #green = float(content['green'])
+
     for i in range(130):
       newred = red-float(i)*red/84
       rig.select('$sequence=' + str(i)).setRGBRaw(newred,green,blue)
       time.sleep(0.25)
       rig.select('$sequence=' + str(i)).setRGBRaw(0,0,0)
-    
+
     return 'Successfully updated'
-  
-  else:	 # request.method == 'GET'
+
+  else:  # request.method == 'GET'
     rig.select('$all').setRGBRaw(0,0,0)
     return 'Hello, World!'
 
@@ -52,8 +54,7 @@ def hex_to_rgb(cpanels):
     rgbs.append(rgb)
 
   return rgbs
-
-
+  
 # Displays the rgb colors on the respective panels on the bridge
 def disp_rgb(rgbs):
   for i in range(len(rgbs)):
@@ -82,24 +83,28 @@ def foo():
   disp_rgb(rgbs)
 
   return str(rgbs[0])
-
+  
 # processes json files with "events"
 @app.route('/themes', methods=['GET'])
 def themesmethod():
   if request.method == 'GET':
     if q.qsize()==0:
       return "empty q"
-  
+
   qtop = q.get()
   cname = qtop["name"]
-  cevents = qtop["events"]
+  #cevents = qtop["events"]
+  cevents = qtop["frames"]
 
   numevents = len(cevents)
   rgbs = []
-  
-  for i in range(numevents):
-    cevent = cevents[str(i)]
+
+  #for i in range(numevents):
+  for cevent in cevents :
+    #cevent = cevents[str(i)]
     cpanels = cevent["panels"]
+    cduration = cevent["Duration"]
+    
     rgbs = hex_to_rgb(cpanels)
 
     cdur = cevent["duration"]
@@ -109,3 +114,5 @@ def themesmethod():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=False, threaded=True)
+
+
